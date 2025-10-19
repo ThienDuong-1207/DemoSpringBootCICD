@@ -1,15 +1,52 @@
+# ==========================================================
+# 🧩 TÊN WORKFLOW
+# ==========================================================
+# Đây là pipeline CI/CD để build & kiểm thử ứng dụng Spring Boot
+# mỗi khi bạn push code hoặc tạo Pull Request.
+# ==========================================================
+
 name: Demo SpringBoot CI/CD
 
-on: [push]
+# ==========================================================
+# 🧩 KHI NÀO WORKFLOW ĐƯỢC KÍCH HOẠT
+# ==========================================================
+# - Khi có "push" (đẩy code lên GitHub)
+# - Hoặc khi có "pull request" (tạo yêu cầu gộp code)
+# ==========================================================
+
+on:
+  push:
+    branches: ["main"] # chạy khi push vào nhánh main
+  pull_request:
+    branches: ["main"] # chạy khi có PR gửi vào nhánh main
+
+# ==========================================================
+# 🧩 KHAI BÁO CÔNG VIỆC (JOB)
+# ==========================================================
+# Tên job là "build", chạy trên môi trường Ubuntu mới nhất
+# ==========================================================
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      # ------------------------------------------------------
+      # 1️⃣ LẤY MÃ NGUỒN TỪ REPOSITORY
+      # ------------------------------------------------------
+      # Sử dụng action chính thức của GitHub để clone code repo
+      # về máy ảo runner trong quá trình build.
+      # ------------------------------------------------------
+      - name: Checkout source code
         uses: actions/checkout@v4
 
+      # ------------------------------------------------------
+      # 2️⃣ CÀI ĐẶT PHIÊN BẢN JDK DÙNG CHO MAVEN
+      # ------------------------------------------------------
+      # - Dùng distribution: temurin (Eclipse Adoptium)
+      # - Java version: 17 (LTS, ổn định cho Spring Boot 3.x)
+      # - cache: maven giúp lưu dependency để build nhanh hơn
+      # ------------------------------------------------------
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -17,8 +54,33 @@ jobs:
           java-version: "17"
           cache: maven
 
+      # ------------------------------------------------------
+      # 3️⃣ KIỂM TRA PHIÊN BẢN JAVA TRÊN RUNNER
+      # ------------------------------------------------------
+      # Bước này giúp bạn xác minh runner thực sự đang dùng
+      # JDK 17 (tránh lỗi “release version not supported”)
+      # ------------------------------------------------------
       - name: Verify Java version
         run: java -version
 
+      # ------------------------------------------------------
+      # 4️⃣ BUILD PROJECT VỚI MAVEN
+      # ------------------------------------------------------
+      # - mvn clean package: xoá file cũ, build ra file jar mới.
+      # - -DskipTests: bỏ qua test khi build (cho nhanh hơn).
+      # - --batch-mode: chế độ không tương tác, phù hợp CI/CD.
+      # ------------------------------------------------------
       - name: Build with Maven
         run: mvn clean package -DskipTests --batch-mode
+
+      # ------------------------------------------------------
+      # 5️⃣ (TÙY CHỌN) TẢI FILE BUILD LÊN GITHUB
+      # ------------------------------------------------------
+      # Sau khi build xong, file .jar được lưu ở thư mục target/.
+      # Đoạn này giúp bạn xem lại artifact ngay trên tab Actions.
+      # ------------------------------------------------------
+      - name: Upload built JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: springboot-jar
+          path: target/*.jar
