@@ -1,39 +1,22 @@
-name: CI - Build & Test Spring Boot with Maven
+name: Demo SpringBoot CI/CD
 
-on:
-  push:
-    branches: ["main"]
-  pull_request:
-    branches: ["main"]
+on: [push]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️ Lấy code từ repo
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      # 1️ Lấy code từ repository
+      - uses: actions/checkout@v2
 
-      # 2️ Cài đặt JDK 17 (hoặc phiên bản bạn dùng)
+      # 2️ Cài đặt JDK (ở đây dùng Java 17, nếu bạn thích giữ 11 cũng được)
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v2
         with:
           java-version: "17"
           distribution: "temurin"
-          cache: maven
 
-      # 3️ Build project bằng Maven
+      # 3️ Build với Maven (vì project của bạn nằm trong thư mục demo/)
       - name: Build with Maven
-        run: mvn -f demo/pom.xml clean package -DskipTests
-
-      # 4️ Chạy test (nếu có)
-      - name: Run tests
-        run: mvn -f demo/pom.xml test
-
-      # 5️ (Tuỳ chọn) Upload kết quả build để xem trong GitHub
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: spring-boot-jar
-          path: demo/target/*.jar
+        run: mvn -f demo/pom.xml --batch-mode --update-snapshots verify
